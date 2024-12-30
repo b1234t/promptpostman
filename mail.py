@@ -1,5 +1,5 @@
 import argparse
-import os
+from datetime import datetime
 import uuid
 from email import policy
 from email.parser import BytesParser
@@ -42,6 +42,9 @@ class GuerrillaMailClient:
         response.raise_for_status()
 
         return response.text
+
+    def list_emails_full(self) -> Dict[str, Any]:
+        return self._do_api_request(f='get_email_list', offset='0')
 
     def list_emails(self) -> List[Dict[str, Any]]:
         return self._do_api_request(f='get_email_list', offset='0').get('list')
@@ -91,7 +94,7 @@ def main():
 
     emails = client.list_email_ids()
     for email_id in emails:
-        fn = f"{str(uuid.uuid4())}.pgp"
+        fn = f'{args.email_account}__{datetime.now().strftime("%Y-%m-%d_%H%M%S.%f")}.pgp'
         content = client.get_plain_text_body(email_id)
 
         if "-----BEGIN PGP MESSAGE-----" not in content:
@@ -100,6 +103,23 @@ def main():
         with open(out_dir.joinpath(fn), 'wt') as f:
             f.write(content)
         client.del_email([email_id])
+
+def generate_new_inboxes():
+    email_inboxes = []
+    for _ in range(1, 10):
+        # open a new email inbox with a newly generated uuid
+        inbox = str(uuid.uuid4())
+        client = GuerrillaMailClient(inbox)
+        emails = client.list_emails_full()
+        email_inboxes.append(inbox)
+        # print inbox -> alias pairs
+        print(f'{inbox}\t{emails.get("alias")}@sharklasers.com')
+
+    # print out a bash array declare with the inboxes to check
+    print("declare -a inboxes=(")
+    for i in email_inboxes:
+        print(f'"{i}"')
+    print(")")
 
 if __name__ == '__main__':
     main()

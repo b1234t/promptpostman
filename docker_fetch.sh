@@ -64,6 +64,7 @@ done
 
 # now save out an image with all of our accumulated tags
 name="__docker_container__$(basename $image)"_"$RANDOM.tar.gz"
+echo "SAVING IMAGE FILE: $name  -- including tags: $tag_list"
 docker save $tag_list | gzip > "$output_dir/.$name"
 mv "$output_dir/.$name" "$output_dir/$name"
 
