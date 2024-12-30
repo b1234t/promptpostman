@@ -79,6 +79,7 @@ do
         # support arbitrary http downloads
         if echo "$line" | grep -q -P "^http"
         then
+            success="yep"
             echo "$(date "+%Y-%m-%d %H:%M:%S") - $email_inbox requested download of file: $line" >> "$log_file"
             tmp_dir=$(mktemp)
             curl --no-progress-meter -O --output-dir "$tmp_dir" "$line" >> "$log_file" 2>&1
@@ -92,14 +93,21 @@ do
         if echo "$line" | grep -q "helm pull"
         then
             # TODO: add helm pull support
+            # note: we should support things like:
+            # > helm pull nginx --repo https://charts.bitnami.com/bitnami
+            # > helm pull bitnami/nginx --version 13.2.15
+            # we can use --destination to specify an output directory which we may want to do for each pull so we can easily identify the .tgz file that is produced from the command
         fi
         
     done < <(cat "$i")
 
-    if [[ ! -z $success ]]
+    if [[ -z $success ]]
     then
-        mv "$i" "$completed_dir"
+        echo "ERROR: NO VALID COMMANDS FOUND - from: $i" >> "$log_file"
     fi
+
+    # archive this file as 'complete'
+    mv "$i" "$completed_dir"
 done
 
 
